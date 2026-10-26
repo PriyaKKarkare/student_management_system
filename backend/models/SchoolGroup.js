@@ -18,4 +18,3 @@ const schoolGroupSchema = new mongoose.Schema(
 
 module.exports = mongoose.model("SchoolGroup", schoolGroupSchema);
 
-//ha joh ref aahe toh different model chya db connect karanya sathi use hote.

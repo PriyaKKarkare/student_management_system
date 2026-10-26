@@ -1,6 +1,7 @@
 const TeacherClassAssignment = require("../models/TeacherClassAssignment");
 const User = require("../models/User");
 const Class = require("../models/Class");
+const SchoolGroup = require("../models/SchoolGroup");
 
 const assignTeacherToClass = async (req, res) => {
 	try {
@@ -31,6 +32,29 @@ const assignTeacherToClass = async (req, res) => {
 			return res.status(404).json({
 				message: "Class not found"
 			});
+		}
+
+		const group = await SchoolGroup.findOne({
+			directorId: req.user.userId
+		});
+
+		console.log("req.user", req);
+
+		if (!group) {
+			return res.status(404).json({
+				message: "Director School group not found"
+			});
+		}
+
+		const school = await require("../models/School").findOne({
+			_id: schoolClass.schoolId,
+			groupId: group._id
+		});
+
+		if (!school) {
+			return res.status(403).json({
+				message: "you cannot assign teacher to another school group",
+			})
 		}
 
 		const existingAssignment = await TeacherClassAssignment.findOne({
