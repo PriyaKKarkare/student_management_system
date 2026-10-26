@@ -5,6 +5,7 @@ require("dotenv").config();
 
 const authRoutes = require("./routes/authRoutes");
 const directorRoutes = require("./routes/directorRoutes");
+const teacherRoutes = require("./routes/teacherRoutes");
 
 const app = express();
 
@@ -13,6 +14,7 @@ app.use(express.json());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/director", directorRoutes);
+app.use("/api/teacher", teacherRoutes);
 
 app.get('/', (req, res) => {
 	res.send("School Management System API is running");

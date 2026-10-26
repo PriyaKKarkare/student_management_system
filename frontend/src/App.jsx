@@ -1,122 +1,163 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+
+import { useState } from "react";
+import "./App.css";
+
+const API_URL = "http://localhost:5000";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [email, setEmail] = useState("director@example.com");
+  const [password, setPassword] = useState("");
+  const [token, setToken] = useState("");
+  const [user, setUser] = useState(null);
+  const [schools, setSchools] = useState([]);
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // Login API
+  const handleLogin = async (e) => {
+    e.preventDefault();
+
+    setLoading(true);
+    setMessage("");
+
+    try {
+      const response = await fetch(`${API_URL}/api/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Login failed");
+      }
+
+      setToken(data.token);
+      setUser(data.user);
+
+      setMessage("Login successful!");
+
+      // Login successful झाल्यावर Dashboard API call
+      await fetchDashboard(data.token);
+    } catch (error) {
+      setMessage(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Protected Dashboard API
+  const fetchDashboard = async (loginToken) => {
+    try {
+      const response = await fetch(
+        `${API_URL}/api/director/dashboard`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${loginToken}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Dashboard failed");
+      }
+
+      setSchools(data.schools || []);
+      setMessage(data.message);
+    } catch (error) {
+      setMessage(error.message);
+    }
+  };
+
+  // Logout
+  const handleLogout = () => {
+    setToken("");
+    setUser(null);
+    setSchools([]);
+    setPassword("");
+    setMessage("You have logged out.");
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="app">
+      <header className="header">
+        <h1>School Management System</h1>
+        <p>Director Portal</p>
+      </header>
 
-      <div className="ticks"></div>
+      {!token ? (
+        <form className="login-card" onSubmit={handleLogin}>
+          <h2>Director Login</h2>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+          <label>Email</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Enter email"
+            required
+          />
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+          <label>Password</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Enter password"
+            required
+          />
+
+          <button type="submit" disabled={loading}>
+            {loading ? "Please wait..." : "Login"}
+          </button>
+
+          {message && <p className="message">{message}</p>}
+        </form>
+      ) : (
+        <main className="dashboard">
+          <div className="welcome">
+            <div>
+              <h2>Welcome, {user?.name}</h2>
+              <p>Role: {user?.role}</p>
+            </div>
+
+            <button onClick={handleLogout}>Logout</button>
+          </div>
+
+          <h2>My Schools</h2>
+          <p>{schools.length} schools found</p>
+
+          {schools.length === 0 ? (
+            <p>No schools found in this group.</p>
+          ) : (
+            <div className="school-list">
+              {schools.map((school) => (
+                <div className="school-card" key={school._id}>
+                  <h3>{school.name}</h3>
+                  <p>{school.address}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <button
+            onClick={() => fetchDashboard(token)}
+            className="refresh-button"
+          >
+            Refresh Dashboard
+          </button>
+
+          {message && <p className="message">{message}</p>}
+        </main>
+      )}
+    </div>
+  );
 }
 
-export default App
+export default App;
